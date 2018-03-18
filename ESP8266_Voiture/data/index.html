@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset=utf-8 />
+	<script src="jquery-1.11.3.min.js"></script>
+	<script src="jquery-ui.min.js"></script>
+	<script src="jquery.ui.touch-punch.min.js"></script>
+	<link rel=stylesheet href="style.css" />
+
+	<script type="text/javascript">
+	var revertDuration	= 200;
+	var idSendTimer;
+	var sendTimer		= 1;
+	var left0		=0;
+	var top0		=0;
+	var leftPrev	=100;
+	var topPrev		=100;
+	function init() {
+		
+		left0	= $('#car').position().left + $('#car').width()/2;
+		top0	= $('#car').position().top + $('#car').width()/2;
+		
+		idSendTimer = setInterval(getCarPosition, sendTimer * 500);
+		ajax	= $.ajax({
+			url:"/car?connecting",
+			type: 'GET',
+			timeout:500,
+			async:true,
+			success: function (data) { setlog(data); },
+			error: function (jqXHR, textStatus, errorThrown) { setlog(errorThrown); },
+		});
+		$("#msg").focus();
+	}
+	function new_sendTimer(timer){
+		clearInterval(idSendTimer);
+		idSendTimer = setInterval(getCarPosition, timer);
+	}
+	function send(msg){
+		if(!msg) {	msg	= $("#msg").val();	}
+		if(!msg) {
+			alert("Message can not be empty"); 
+			return; 
+		}
+		try { 
+			ajax	= $.ajax({
+				url:"/car?"+msg,
+				type: 'GET',
+				timeout:2000,
+				async:true,
+				success: function (data) { setlog(data); },
+				error: function (jqXHR, textStatus, errorThrown) { setlog(errorThrown); },
+			});
+		
+			setlog('Sent: '+msg); 
+		} catch(ex) { 
+			setlog(ex); 
+		}
+	}
+	
+	function setlog(msg){ $("#log").prepend("<br>" + msg);/* $("#log").html(msg);*/}
+	function onkey(event){ if(event.keyCode==13){ send(); } }
+	
+	function getCarPosition(){
+		if($('#accueil').css('display') == 'none') return;
+		var left = (($('#car').position().left + $('#car').width()/2 - left0)* 100 / ($('#target').height()/2 - $('#car').height()/2)).toFixed(0);
+		var top = ((top0 - $('#car').position().top - $('#car').width()/2) * 100 / ($('#target').height()/2 - $('#car').height()/2)).toFixed(0);
+		var txt	= 'left=' + left + '&top=' + top;	
+		if(left != leftPrev || top != topPrev ) {
+			send(txt);
+		}
+		leftPrev	= left;
+		topPrev		= top;
+		//~ setlog(txt);				
+	}
+	</script>
+</head>
+<body onload="init()">
+	<div class=accueil>
+		<div class='target' id='target'><div class='draggable' id='car'></div></div>
+		<div class='log' id='log'></div>
+	</div>
+	<script type='text/javascript'>
+		$('#car').draggable({ 
+			containment: "#target", 
+			scroll: false,
+			revert : true,
+			revertDuration : revertDuration
+		});
+	</script>
+</body>
+</html>
